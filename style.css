@@ -5,6 +5,8 @@ body {
 #mainGrid {
     display: flex;
     flex-direction: row;
+    height: 100%;
+    width: 100%;
 }
 #topBar {
     background-color: rgb(156, 91, 137);
