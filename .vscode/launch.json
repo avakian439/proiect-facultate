@@ -5,11 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
-            "type": "debugpy",
+            "type": "node",
             "request": "launch",
-            "program": "server/run.py",
-            "console": "integratedTerminal"
+            "name": "Launch Vite",
+            "preLaunchTask": "Run Project", // The name of the task defined above
         }
     ]
 }
