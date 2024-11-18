@@ -1,9 +1,11 @@
-import { Application, BackgroundLoader, Container, Graphics, Ticker } from "pixi.js";
+import { Application, BackgroundLoader, Container, Graphics, Ticker, Text, v8_0_0 } from "pixi.js";
 import { app, cookingScene } from "../../app.js";
 import { randInt } from "../../util.js";
 import { hitbar } from "./bars.js";
 import "./shelfUI.js"
 
+
+//!TODO make it pretty
 let difficulty = 3;
 
 export const circleContainer = new Container();
@@ -16,6 +18,14 @@ let backCircle = new Graphics()
 let frontCircle = new Graphics()
     .circle(0, 0, 60)
     .fill(0xe8eb34)
+
+let hitText = new Text({
+    text: "0",
+    style: {
+        fill: 0x000000,
+    }
+})
+hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
 
 circleContainer.addChild(backCircle);
 
@@ -43,6 +53,7 @@ cookingScene.addChild(circleContainer);
 cookingScene.addChild(barContainer);
 cookingScene.addChild(frontCircle);
 app.stage.addChild(cookingScene);
+app.stage.addChild(hitText);
 
 function startFade(element) { 
     const fadeTicker = new Ticker();
@@ -80,6 +91,14 @@ app.ticker.add((ticker) =>  {
     }
     
     if (rotating && playerBar.angle > 180 && halfway){
+        if (barsHit != difficulty){
+            barsHitTotal = 0;
+            hitText.text = barsHitTotal;
+            hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
+        }
+        barsHit = 0;
+
+        playerBar.angle = 180;
         rotating = false;
         halfway = false;
         resetHitbars()
@@ -142,26 +161,41 @@ function hitbarsAngles(){
 
 hitbarsAngles();
 
+let barsHitTotal = 0;
 let barsHit = 0;
 addEventListener('keydown', (e) => {
     console.log(e)
 
     if (e.key == " "){
         rotating = true;
+        let hitAtleastOne = false;
 
+        let results = [];
         let angleToCheck = playerBar.angle
+
         hitbars.forEach(element => {
             if (Math.abs(element.angle - angleToCheck) < element.width && !element.hit){
                 console.log('hit')
                 element.hit = true;
-                
+                hitAtleastOne = true;
                 startFade(element)
 
                 barsHit += 1;
-                console.log(barsHit)
-            }
+                barsHitTotal += 1;
+                hitText.text = barsHitTotal;
+                hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
+
+                results.push = "hit";
+                console.log(barsHitTotal)
+            } 
             //element.angle = Math.random() * 360;
         });
 
+        if (!hitAtleastOne && playerBar.angle != 180){
+            barsHitTotal = 0;
+            hitText.text = barsHitTotal;
+            console.log("miss")
+        }
+        //hitAtleastOne = false;
     }
 })
