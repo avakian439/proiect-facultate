@@ -4,56 +4,67 @@ import { randInt } from "../../util.js";
 import { hitbar } from "./bars.js";
 import "./shelfUI.js"
 
-
 //!TODO make it pretty
-let difficulty = 3;
-
-export const circleContainer = new Container();
-export const barContainer = new Container();
-
-let backCircle = new Graphics()
-    .circle(0, 0, 80)
-    .fill(0x5cafe2)
-
-let frontCircle = new Graphics()
-    .circle(0, 0, 60)
-    .fill(0xe8eb34)
-
-let hitText = new Text({
-    text: "0",
-    style: {
-        fill: 0x000000,
-    }
-})
-hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
-
-circleContainer.addChild(backCircle);
-
-let playerBar = new Graphics()
-    .rect(0, 0, 15, 80)
-    .fill(0x000000)
-
-barContainer.addChild(playerBar);
-playerBar.pivot.set(playerBar.width / 2, 0)
-
-
+// difficulty increases the number of bars to hit
+let difficulty = 5;
+// list with all the hitbar objects
 let hitbars = [];
-for (let i = 0; i < difficulty; i++){
-    const hitbarval = new hitbar(0, 0, 0xffffff);
-    circleContainer.addChild(hitbarval);
-    hitbars.push(hitbarval);
+// weather playerbar is rotating or not
+let rotating = false;
+// weather playerbar has passed half the circle, 
+//this is needed because the bar starts at 180 degrees and there's some funky logic when it wraps back around that i don't want to deal with
+let halfway = false;
+
+export const barContainer = new Container();
+export const circleContainer = new Container();
+let backCircle, frontCircle, playerBar, hitText
+
+export function setCookingSceneGraphics(){
+    backCircle = new Graphics()
+        .circle(0, 0, 80)
+        .fill(0x5cafe2)
+    
+    frontCircle = new Graphics()
+        .circle(0, 0, 60)
+        .fill(0xe8eb34)
+        
+    playerBar = new Graphics()
+        .rect(0, 0, 15, 80)
+        .fill(0x000000)
+        playerBar.pivot.set(playerBar.width / 2, 0)
+
+    hitText = new Text({
+        text: "0",
+        style: {
+            fill: 0x000000,
+        }
+    })
+    hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
+    
+    circleContainer.addChild(backCircle);
+    barContainer.addChild(playerBar);
+    
+    circleContainer.position.set(app.screen.width / 2, app.screen.height / 6);
+    frontCircle.position.set(circleContainer.x, circleContainer.y);
+    
+    playerBar.x = circleContainer.x;
+    playerBar.y = circleContainer.y;   
+    playerBar.angle = 180;
+    
+    cookingScene.addChild(circleContainer);
+    cookingScene.addChild(barContainer);
+    cookingScene.addChild(frontCircle);
+    cookingScene.addChild(hitText);
+    app.stage.addChild(cookingScene);
+    
+    for (let i = 0; i < difficulty; i++){
+        const hitbarval = new hitbar(0, 0, 0xffffff);
+        circleContainer.addChild(hitbarval);
+        hitbars.push(hitbarval);
+    }
 }
+setCookingSceneGraphics();
 
-circleContainer.position.set(app.screen.width / 2, app.screen.height / 6);
-frontCircle.position.set(circleContainer.x, circleContainer.y);
-playerBar.x = circleContainer.x;
-playerBar.y = circleContainer.y;   
-
-cookingScene.addChild(circleContainer);
-cookingScene.addChild(barContainer);
-cookingScene.addChild(frontCircle);
-app.stage.addChild(cookingScene);
-app.stage.addChild(hitText);
 
 function startFade(element) { 
     const fadeTicker = new Ticker();
@@ -76,20 +87,19 @@ function resetHitbars() {
     hitbarsAngles();
 }
 
-let rotating = false;
-let halfway = false;
-playerBar.angle = 180;
 app.ticker.add((ticker) =>  {
     if (rotating){
         playerBar.rotation += 0.05 * ticker.deltaTime;
         //console.log(playerBar.angle)
+
+        if (playerBar.angle > 360){
+            playerBar.angle = 0;
+            halfway = true;
+        }
     }
     
-    if (playerBar.angle > 360){
-        playerBar.angle = 0;
-        halfway = true;
-    }
     
+    // logic for when the bar reaches it's initial position
     if (rotating && playerBar.angle > 180 && halfway){
         if (barsHit != difficulty){
             barsHitTotal = 0;
@@ -105,52 +115,24 @@ app.ticker.add((ticker) =>  {
     }    
 })
 
-let barAngles = [];
-
+// logic for determening the angles the bars look at
 function hitbarsAngles(){
     let attempts = 0;
-    barAngles = [];
+    let barAngles = [];
+    // !TODO i don't think this code actually works
     for (let i = 0; i < hitbars.length; i++){
         let width = hitbars[i].width;
-
-        hitbars[i].angle = Math.random() * 360;
-
         console.table({dist: Math.abs(playerBar.angle - hitbars[i].angle), bar: hitbars[i].angle})
 
-        while(Math.abs(playerBar.angle  - hitbars[i].angle) < 20 + width){
-            hitbars[i].angle = Math.random() * 360;
-            console.log("finding another angle (player bar overlap)")
-            attempts += 1;
+        hitbars[i].angle = randInt(0,360)
+        //if (hitbars[i].collideAngles(hitbars[i], playerBar)){
 
-            if (attempts > 50){
-                console.error("could not find a valid angle")
-                hitbars[i].visible = false;
-                break;
-            }
-        }
-
-        if (!barAngles.length == 0){
-            barAngles.forEach(element => {
-                while(Math.abs(hitbars[i].angle - element) < 15 + width){
-                    hitbars[i].angle = Math.random() * 360;
-                    console.log("finding another angle (other bar overlap)")
-                    attempts += 1;
-                        while(Math.abs(playerBar.angle  - hitbars[i].angle) < 20 + width){
-                            hitbars[i].angle = Math.random() * 360;
-                            console.log("finding another angle (player bar overlap)")
-                            attempts += 1;
-                
-                            if (attempts > 50){
-                                console.error("could not find a valid angle")
-                                hitbars[i].visible = false;
-                                break;
-                            }
-                        }
-                    if (attempts > 50){
-                        console.error("could not find a valid angle")
-                        hitbars[i].visible = false;
-                        break;
-                    }
+        if (i == 0){
+            barAngles.push(hitbars[i].angle);
+        } else {
+            barAngles.forEach( (element) =>{
+                while (Math.abs(hitbars[i].angle - playerBar.angle) < playerBar.width || Math.abs(hitbars[i].angle - element) < hitbars[i].width + 10){
+                    hitbars[i].rotation += playerBar.width
                 }
             })
         }
@@ -158,9 +140,9 @@ function hitbarsAngles(){
         barAngles.push(hitbars[i].angle);
     }
 }
+hitbarsAngles()
 
-hitbarsAngles();
-
+// logic for hitting bars
 let barsHitTotal = 0;
 let barsHit = 0;
 addEventListener('keydown', (e) => {

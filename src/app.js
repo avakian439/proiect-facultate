@@ -1,6 +1,5 @@
 import { Application, BackgroundLoader, Container, Graphics, Ticker } from "pixi.js";
 import { initDevtools } from '@pixi/devtools';
-import "./util.js";
 
 export const app = new Application();
 

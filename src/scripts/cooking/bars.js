@@ -10,4 +10,13 @@ export class hitbar extends Graphics {
         this.pivot.set(this.width / 2, 0);
         this.hit = false;
     }
+
+    collideAngles(a, b){
+        const angleA = a.angle
+        const angleB = b.angle;
+
+        return (
+            Math.abs(angleA - angleB) < angleA.width && Math.abs(angleA - angleB) < angleB.width 
+        );
+    }
 }
