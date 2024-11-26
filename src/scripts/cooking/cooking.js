@@ -6,7 +6,7 @@ import "./shelfUI.js"
 
 //!TODO make it pretty
 // difficulty increases the number of bars to hit
-let difficulty = 5;
+let difficulty = 3;
 // list with all the hitbar objects
 let hitbars = [];
 // weather playerbar is rotating or not
@@ -66,6 +66,107 @@ export function setCookingSceneGraphics(){
 setCookingSceneGraphics();
 
 
+
+app.ticker.add((ticker) =>  {
+    if (rotating){
+        playerBar.rotation += 0.05 * ticker.deltaTime;
+        //console.log(playerBar.angle)
+        
+        if (playerBar.angle > 360){
+            playerBar.angle = 0;
+            halfway = true;
+        }
+    }
+    
+    
+    // logic for when the bar reaches it's initial position
+    if (rotating && playerBar.angle > 180 && halfway){
+        if (barsHit != difficulty){
+            barsHitTotal = 0;
+            hitText.text = barsHitTotal;
+            hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
+        }
+        barsHit = 0;
+        
+        playerBar.angle = 180;
+        rotating = false;
+        halfway = false;
+        resetHitbars()
+    }    
+})
+
+let barAngles = [];
+// logic for determening the angles the bars look at
+function hitbarsAngles(){
+    //let attempts = 0;
+    barAngles = [];
+    let playerbarAngle = playerBar.angle 
+    
+    // !TODO i don't think this code actually works
+    for (let i = 0; i < hitbars.length; i++){
+        //console.table({dist: Math.abs(playerbarAngle - hitbars[i].angle), bar: hitbars[i].angle})
+        
+        hitbars[i].angle = randInt(0,360)
+        //if (hitbars[i].collideAngles(hitbars[i], playerBar)){
+            
+        if (i == 0){
+            barAngles.push(hitbars[i].angle);
+        } else {
+            barAngles.forEach( (element) =>{
+                while (Math.abs(hitbars[i].angle - playerbarAngle) < playerBar.width || Math.abs(hitbars[i].angle - element) < hitbars[i].width + 10){
+                    hitbars[i].rotation += playerBar.width
+                }
+            })
+        }
+        
+        barAngles.push(hitbars[i].angle);
+    }
+}
+hitbarsAngles()
+
+// logic for hitting bars
+let barsHitTotal = 0;
+let barsHit = 0;
+addEventListener('keydown', (e) => {
+    //console.log(e)
+    
+    if (e.key == " "){
+        rotating = true;
+        let hitAtleastOne = false;
+        
+        let results = [];
+        let angleToCheck = playerBar.angle
+        
+        hitbars.forEach(element => {
+            if (Math.abs(element.angle - angleToCheck) < element.width + 5 && !element.hit){
+                console.log('hit')
+                console.table({elementangle:element.angle, playerangle:angleToCheck, diff:element.angle - angleToCheck + element.width + 5, miss:false})
+                element.hit = true;
+                hitAtleastOne = true;
+                startFade(element)
+                
+                barsHit += 1;
+                barsHitTotal += 1;
+                hitText.text = barsHitTotal;
+                hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
+                
+                results.push = "hit";
+                console.log(barsHitTotal)
+            } 
+            //element.angle = Math.random() * 360;
+        });
+        
+        if (!hitAtleastOne && playerBar.angle != 180){
+            barsHitTotal = 0;
+            hitText.text = barsHitTotal;
+            //console.table({elementangle:element.angle, playerangle:angleToCheck, diff:element.angle - angleToCheck + element.width + 5, miss:true})
+        }
+        //hitAtleastOne = false;
+    }
+})
+
+
+// functions for bar effects
 function startFade(element) { 
     const fadeTicker = new Ticker();
     fadeTicker.start();
@@ -86,98 +187,3 @@ function resetHitbars() {
     });
     hitbarsAngles();
 }
-
-app.ticker.add((ticker) =>  {
-    if (rotating){
-        playerBar.rotation += 0.05 * ticker.deltaTime;
-        //console.log(playerBar.angle)
-
-        if (playerBar.angle > 360){
-            playerBar.angle = 0;
-            halfway = true;
-        }
-    }
-    
-    
-    // logic for when the bar reaches it's initial position
-    if (rotating && playerBar.angle > 180 && halfway){
-        if (barsHit != difficulty){
-            barsHitTotal = 0;
-            hitText.text = barsHitTotal;
-            hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
-        }
-        barsHit = 0;
-
-        playerBar.angle = 180;
-        rotating = false;
-        halfway = false;
-        resetHitbars()
-    }    
-})
-
-// logic for determening the angles the bars look at
-function hitbarsAngles(){
-    let attempts = 0;
-    let barAngles = [];
-    // !TODO i don't think this code actually works
-    for (let i = 0; i < hitbars.length; i++){
-        let width = hitbars[i].width;
-        console.table({dist: Math.abs(playerBar.angle - hitbars[i].angle), bar: hitbars[i].angle})
-
-        hitbars[i].angle = randInt(0,360)
-        //if (hitbars[i].collideAngles(hitbars[i], playerBar)){
-
-        if (i == 0){
-            barAngles.push(hitbars[i].angle);
-        } else {
-            barAngles.forEach( (element) =>{
-                while (Math.abs(hitbars[i].angle - playerBar.angle) < playerBar.width || Math.abs(hitbars[i].angle - element) < hitbars[i].width + 10){
-                    hitbars[i].rotation += playerBar.width
-                }
-            })
-        }
-
-        barAngles.push(hitbars[i].angle);
-    }
-}
-hitbarsAngles()
-
-// logic for hitting bars
-let barsHitTotal = 0;
-let barsHit = 0;
-addEventListener('keydown', (e) => {
-    console.log(e)
-
-    if (e.key == " "){
-        rotating = true;
-        let hitAtleastOne = false;
-
-        let results = [];
-        let angleToCheck = playerBar.angle
-
-        hitbars.forEach(element => {
-            if (Math.abs(element.angle - angleToCheck) < element.width && !element.hit){
-                console.log('hit')
-                element.hit = true;
-                hitAtleastOne = true;
-                startFade(element)
-
-                barsHit += 1;
-                barsHitTotal += 1;
-                hitText.text = barsHitTotal;
-                hitText.position.set(app.screen.width / 2 - hitText.width / 2, app.screen.height / 6 - hitText.height / 2)
-
-                results.push = "hit";
-                console.log(barsHitTotal)
-            } 
-            //element.angle = Math.random() * 360;
-        });
-
-        if (!hitAtleastOne && playerBar.angle != 180){
-            barsHitTotal = 0;
-            hitText.text = barsHitTotal;
-            console.log("miss")
-        }
-        //hitAtleastOne = false;
-    }
-})
